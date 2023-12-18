@@ -1,12 +1,13 @@
 from PIL import Image
 import os
 
-
 class Grafo:
     def __init__(self) -> None:
         self.lista = {}
         self.numNos = 0
         self.numArestas = 0
+        self.pixelInicial = 0
+        self.pixelFinal = 0
 
     def adicionaNo(self, no: any) -> None:
         """
@@ -106,10 +107,11 @@ class Grafo:
                             self.adicionaNo(novoNo)
                         if corDoPixel == (255, 0, 0):
                             pixelInicial = novoNo
+                            self.pixelInicial = novoNo
                         if corDoPixel == (0, 255, 0):
                             pixelFinal = novoNo
+                            self.pixelFinal = novoNo
         self.conectaVizinhos(base, altura)
-        self.buscaLargura(pixelInicial, pixelFinal)
 
     def conectaVizinhos(self, base, altura):
         """
@@ -141,8 +143,8 @@ class Grafo:
         - pixelFinal: Pixel de destino da busca.
 
         Essa função utiliza a busca em largura para encontrar o menor caminho no grafo entre o pixelInicial
-        e o pixelFinal. Ela mantém distâncias e predecessores para reconstruir o caminho percorrido e imprime
-        o caminho encontrado.
+        e o pixelFinal. Ela mantém distâncias e predecessores para reconstruir o caminho percorrido e retornar
+        esse caminho em tuplas: "(X1, Y1), (X2, Y2), ..."
         """
         dist = {no: float("inf") for no in self.lista}
         pred = {no: None for no in self.lista}
@@ -156,11 +158,9 @@ class Grafo:
                     Q.append(v)
                     dist[v] = dist[u] + 1
                     pred[v] = u
-        
+
         caminho = self.reconstruirCaminho(pixelFinal, pred)
-        print("Caminho percorrido:")
-        print(" ".join(str(seta) for seta in caminho))
-        print(f"Pixel Inicial (Vermelho): {pixelInicial} | Pixel Final (Verde): {pixelFinal}\n")
+        return caminho
 
     def reconstruirCaminho(self, pixelFinal, pred):
         """
@@ -170,23 +170,13 @@ class Grafo:
         - pixelFinal: Pixel de destino do caminho.
         - pred: Dicionário de predecessores.
 
-        Retorna uma lista de direções representando o caminho percorrido.
+        Retorna uma lista de coordenadas representando o caminho percorrido.
         """
-        caminho = [] # Usada para armazenar as direções do caminho
-        atual = pixelFinal # Inicializa o nó com o pixelFinal, pois a reconstrução vai começar pelo final para ser mais performático.
-        direcoes = {(0, -1): "←", (0, 1): "→", (-1, 0): "↑", (1, 0): "↓"}
+        caminho = []  # Usada para armazenar as coordenadas do caminho
+        atual = pixelFinal  # Inicializa o nó com o pixelFinal, pois a reconstrução vai começar pelo final para ser mais performático.
 
         while atual is not None:
-            anterior = pred[atual] # Pega o predecessor do nó atual
-
-            if anterior is not None:
-                direcao = direcoes[(atual[0] - anterior[0], atual[1] - anterior[1])] # Subtrai as coordenadas do nó atual e o predecessor dele, exemplo: (1, 11)-(1, 10) = (1-1, 11-10) = (0, 1)
-                caminho.insert(0, direcao) # Insere a direção na lista caminho
-
-            atual = anterior # Atualiza o nó atual como sendo o predecessor
+            caminho.insert(0, atual)  # Insere as coordenadas na lista caminho
+            atual = pred[atual]  # Atualiza o nó atual como sendo o predecessor
 
         return caminho
-
-    def printaGrafo(self):
-        for no, vizinhos in self.lista.items():
-            print(f"Nó: {no}, Vizinhos: {list(vizinhos)}")
