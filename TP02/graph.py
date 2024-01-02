@@ -88,7 +88,6 @@ class Grafo:
             print("Arquivo não encontrado!")
 
         base, altura = imagem.size
-        print(imagem.size)
         """
         Nesse trecho, peguei nó por linha (horizontal), cada nó por coluna (vertical) e somei
         eles à cada coordenada da lista "pontosRelativos": superior, inferior, esquerda, direita, 

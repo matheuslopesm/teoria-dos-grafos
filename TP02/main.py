@@ -18,7 +18,7 @@ class InterfaceGrafica:
         self.botaoBuscarCaminho.pack(side=tk.LEFT)
 
         # Adicionei um range para dar zoom na imagem
-        self.sliderZoom = ttk.Scale(self.frame, from_=0.1, to=40, orient=tk.HORIZONTAL, length=200, value=1, command=self.atualizarZoom)
+        self.sliderZoom = ttk.Scale(self.frame, from_=0.1, to=40, orient=tk.HORIZONTAL, length=200, value=15, command=self.atualizarZoom)
         self.sliderZoom.pack(side=tk.LEFT, padx=10)
 
         self.labelImagem = tk.Label(root)
@@ -49,8 +49,8 @@ class InterfaceGrafica:
         """
         if self.grafo:
             zoom = self.sliderZoom.get()
-            larguraTela = 600
-            alturaTela = 400
+            larguraTela = 1000
+            alturaTela = 800
             self.espacamento = min(larguraTela, alturaTela) / max(self.grafo.numNos, 1) * zoom
 
             imagemBranca = Image.new("RGB", (larguraTela, alturaTela), "white")
@@ -64,11 +64,18 @@ class InterfaceGrafica:
                 centroX = (x + 0.5) * self.espacamento
                 centroY = (y + 0.5) * self.espacamento
                 raio = 0.4 * self.espacamento
-                draw.ellipse(
-                    [centroX - raio, centroY - raio, centroX + raio, centroY + raio],
-                    outline="black",
-                    fill="white"
-                )
+                if pixel in self.grafo.areasVerdes:      
+                    draw.ellipse(
+                        [centroX - raio, centroY - raio, centroX + raio, centroY + raio],
+                        outline="black",
+                        fill="green"
+                    )
+                else:      
+                    draw.ellipse(
+                        [centroX - raio, centroY - raio, centroX + raio, centroY + raio],
+                        outline="black",
+                        fill="white"
+                    )
 
             for pixelFinal in self.grafo.areasVerdes:
                 caminho = self.grafo.buscaLargura(self.grafo.pixelInicial, pixelFinal)
@@ -88,7 +95,7 @@ class InterfaceGrafica:
 
     def desenharCaminho(self, imagem, caminho, espacamento):
         draw = ImageDraw.Draw(imagem)
-        corCaminho = (255, 0, 0)
+        corCaminho = (0, 0, 255)
 
         for pixel in caminho:
             x, y = pixel
