@@ -1,6 +1,7 @@
 from PIL import Image
 import os
 
+
 class Grafo:
     def __init__(self) -> None:
         self.lista = {}
@@ -9,6 +10,9 @@ class Grafo:
         self.pixelInicial = 0
         self.pixelFinal = 0
         self.areasVerdes = []
+        self.cinzasClaros = []
+        self.cinzasEscuros = []
+        self.pixelsPretos = []
 
     def adicionaNo(self, no: any) -> None:
         """
@@ -99,21 +103,27 @@ class Grafo:
         for linha in range(altura):
             for coluna in range(base):
                 for dx, dy in pontosRelativos:
-                    novoU, novoV = linha + dx, coluna + dy  # S
+                    novoU, novoV = linha + dx, coluna + dy
                     if altura > novoU >= 0 and base > novoV >= 0:
                         novoNo = novoU, novoV
                         pixel = (novoV, novoU)
                         corDoPixel = imagem.getpixel(pixel)
-                        if (novoNo) not in self.lista and corDoPixel != (0, 0, 0):
+                        if (novoNo) not in self.lista:
                             self.adicionaNo(novoNo)
+                        if corDoPixel == (0, 0, 0):
+                            self.pixelsPretos.append(novoNo)
                         if corDoPixel == (255, 0, 0):
                             self.pixelInicial = novoNo
                         if corDoPixel == (0, 255, 0):
                             self.pixelFinal = novoNo
-                            self.areasVerdes.append(novoNo) # Sempre que encontrar uma área verde ela será adicionada na lista de áreas verdes.
-        self.conectaVizinhos(base, altura)
+                            self.areasVerdes.append(novoNo)
+                        if corDoPixel == (128, 128, 128):
+                            self.cinzasEscuros.append(novoNo)  # Sempre que encontrar uma área verde ela será adicionada na lista de áreas verdes.
+                        if corDoPixel == (196, 196, 196):
+                            self.cinzasClaros.append(novoNo)
+        self.conectaVizinhos(base, altura, imagem, corDoPixel)
 
-    def conectaVizinhos(self, base, altura):
+    def conectaVizinhos(self, base, altura, imagem, corDoPixel):
         """
         Conecta os nós vizinhos no grafo.
 
@@ -127,12 +137,26 @@ class Grafo:
         """
         for no in self.lista:
             linha, coluna = no
-            for dx, dy in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
-                novoU, novoV = linha + dx, coluna + dy
-                if altura > novoU >= 0 and base > novoV >= 0:
-                    vizinho = novoU, novoV
-                    if vizinho in self.lista:
-                        self.adicionaAresta(no, vizinho, 1)
+            corDoPixelAtual = imagem.getpixel((coluna, linha))
+
+            if corDoPixelAtual != (0, 0, 0):
+                for dx, dy in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
+                    novoU, novoV = linha + dx, coluna + dy
+                    if altura > novoU >= 0 and base > novoV >= 0:
+                        vizinho = novoU, novoV
+                        corDoVizinho = imagem.getpixel((novoV, novoU))
+
+                        if vizinho in self.lista and corDoVizinho != (0, 0, 0):
+                            peso = 1
+
+                            if corDoPixelAtual == (128, 128, 128):
+                                peso = 2
+                            elif corDoPixelAtual == (196, 196, 196):
+                                peso = 1.5
+
+                            self.adicionaAresta(no, vizinho, peso)
+        
+        self.printaGrafo()
 
     def buscaLargura(self, pixelInicial, pixelFinal):
         """
@@ -180,3 +204,7 @@ class Grafo:
             atual = pred[atual]  # Atualiza o nó atual como sendo o predecessor
 
         return caminho
+
+    def printaGrafo(self):
+        for no, vizinhos in self.lista.items():
+            print(f"No: {no}, Arestas: {[(vizinho, peso) for vizinho, peso in vizinhos.items()]}")

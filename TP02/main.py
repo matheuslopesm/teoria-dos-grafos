@@ -6,7 +6,7 @@ from graph import Grafo
 class InterfaceGrafica:
     def __init__(self, root):
         self.root = root
-        self.root.title("Busca em Largura - Teoria dos Grafos (CSI466)")
+        self.root.title("Trabalho 02 - Teoria dos Grafos (CSI466)")
 
         self.frame = tk.Frame(root)
         self.frame.pack()
@@ -18,7 +18,7 @@ class InterfaceGrafica:
         self.botaoBuscarCaminho.pack(side=tk.LEFT)
 
         # Adicionei um range para dar zoom na imagem
-        self.sliderZoom = ttk.Scale(self.frame, from_=0.1, to=40, orient=tk.HORIZONTAL, length=200, value=15, command=self.atualizarZoom)
+        self.sliderZoom = ttk.Scale(self.frame, from_=0.1, to=40, orient=tk.HORIZONTAL, length=200, value=1, command=self.atualizarZoom)
         self.sliderZoom.pack(side=tk.LEFT, padx=10)
 
         self.labelImagem = tk.Label(root)
@@ -49,8 +49,8 @@ class InterfaceGrafica:
         """
         if self.grafo:
             zoom = self.sliderZoom.get()
-            larguraTela = 1000
-            alturaTela = 800
+            larguraTela = 600
+            alturaTela = 400
             self.espacamento = min(larguraTela, alturaTela) / max(self.grafo.numNos, 1) * zoom
 
             imagemBranca = Image.new("RGB", (larguraTela, alturaTela), "white")
@@ -69,6 +69,24 @@ class InterfaceGrafica:
                         [centroX - raio, centroY - raio, centroX + raio, centroY + raio],
                         outline="black",
                         fill="green"
+                    )
+                elif pixel in self.grafo.cinzasEscuros:
+                    draw.ellipse(
+                        [centroX - raio, centroY - raio, centroX + raio, centroY + raio],
+                        outline="black",
+                        fill="#808080"
+                    )
+                elif pixel in self.grafo.cinzasClaros:
+                    draw.ellipse(
+                        [centroX - raio, centroY - raio, centroX + raio, centroY + raio],
+                        outline="black",
+                        fill="#c4c4c4"
+                    )
+                elif pixel in self.grafo.pixelsPretos:
+                    draw.ellipse(
+                        [centroX - raio, centroY - raio, centroX + raio, centroY + raio],
+                        outline="black",
+                        fill="black"
                     )
                 else:      
                     draw.ellipse(
