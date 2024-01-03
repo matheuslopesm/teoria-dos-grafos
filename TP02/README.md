@@ -1,8 +1,5 @@
-# Trabalho Prático 01 - Teoria dos Grafos
+# Trabalho Prático 02 - Teoria dos Grafos
 
-Trabalho Prático feito em Python que visa utilizar a Busca em Largura para encontrar o menor caminho a ser percorrido em um grafo a partir de uma imagem .BMP.
-
-Foi utilizada as bibliotecas TKinter e PIL para manipulação da imagem e criação da interface!
 
 <div style="display: inline_block">
     <h3>Language:</h3>
