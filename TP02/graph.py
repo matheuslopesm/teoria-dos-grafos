@@ -1,6 +1,6 @@
 from PIL import Image
 import os
-
+import heapq
 
 class Grafo:
     def __init__(self) -> None:
@@ -50,12 +50,12 @@ class Grafo:
 
     def carregaImagem(self, arquivoBitmap):
         """
-        Carrega a imagem bitmap informada pelo usuário.
+        Carrega a imagem bitmap que está dentro da pasta fornecida pelo usuário.
 
         Parâmetros:
         - arquivoBitmap: Imagem bitmap a ser mapeada.
 
-        Essa função pega o diretório atual deste arquivo e o caminho do arquivo informado pelo usuário,
+        Essa função pega o diretório atual do arquivo e o caminho do arquivo informado pelo usuário (que está dentro da pasta),
         utiliza o módulo "Image" da biblioteca PIL e faz tratamento de exceções para importar o arquivo com sucesso.
         """
         diretorioAtual = os.path.dirname(os.path.abspath(__file__))
@@ -147,48 +147,43 @@ class Grafo:
                         corDoVizinho = imagem.getpixel((novoV, novoU))
 
                         if vizinho in self.lista and corDoVizinho != (0, 0, 0):
+                            # Define um peso base
                             peso = 1
 
+                            # Se o vizinho for um pixel não branco, torna a ligação menos favorável
+                            if corDoVizinho != (255, 255, 255):
+                                peso *= 1.5
+
                             if corDoPixelAtual == (128, 128, 128):
-                                peso = 2
+                                peso *= 2  # Aumenta o peso para pixels cinza escuro
                             elif corDoPixelAtual == (196, 196, 196):
-                                peso = 1.5
+                                peso *= 1.5  # Aumenta o peso para pixels cinza claro
 
                             self.adicionaAresta(no, vizinho, peso)
-        
-        self.printaGrafo()
 
-    def buscaLargura(self, pixelInicial, pixelFinal):
-        """
-        Executa a busca em largura para encontrar o menor caminho entre dois pixels.
+        self.printaGrafoNoConsole()
 
-        Parâmetros:
-        - pixelInicial: Pixel de início da busca.
-        - pixelFinal: Pixel de destino da busca.
-
-        Essa função utiliza a busca em largura para encontrar o menor caminho no grafo entre o pixelInicial
-        e o pixelFinal. Ela mantém distâncias e predecessores para reconstruir o caminho percorrido e retornar
-        esse caminho em tuplas: "(X1, Y1), (X2, Y2), ..."
-        """
+    def dijkstra(self, pixelInicial):
         dist = {no: float("inf") for no in self.lista}
         pred = {no: None for no in self.lista}
-        Q = [pixelInicial]
         dist[pixelInicial] = 0
+        Q = [(dist[pixelInicial], pixelInicial)]
 
-        while len(Q) != 0:
-            u = Q.pop(0)
-            for v in self.lista[u]:
-                if dist[v] == float("inf"):
-                    Q.append(v)
-                    dist[v] = dist[u] + 1
+        while Q:
+            dist_u, u = heapq.heappop(Q)
+
+            for v, peso in self.lista[u].items():
+                if dist[v] > dist_u + peso:
+                    dist[v] = dist_u + peso
+                    heapq.heappush(Q, (dist[v], v))
                     pred[v] = u
 
-        caminho = self.reconstruirCaminho(pixelFinal, pred)
-        return caminho
+        return pred
 
     def reconstruirCaminho(self, pixelFinal, pred):
         """
-        Reconstrói o caminho percorrido a partir dos predecessores.
+        Recria o caminho percorrido com base nas informações de predecessores mantidas durante a
+        execução do algoritmo.
 
         Parâmetros:
         - pixelFinal: Pixel de destino do caminho.
@@ -205,6 +200,10 @@ class Grafo:
 
         return caminho
 
-    def printaGrafo(self):
+    def printaGrafoNoConsole(self):
+        """
+        Printa o grafo com seus nós, arestas e os pesos de cada uma delas.
+        Exemplo: "No: (19, 15), Arestas: [((18, 15), 1), ((19, 14), 1), ((19, 16), 1)]"
+        """
         for no, vizinhos in self.lista.items():
             print(f"No: {no}, Arestas: {[(vizinho, peso) for vizinho, peso in vizinhos.items()]}")
