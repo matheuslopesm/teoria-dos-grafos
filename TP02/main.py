@@ -4,6 +4,7 @@ from PIL import Image, ImageTk, ImageDraw
 from graph import Grafo
 import os
 
+
 class InterfaceGrafica:
     def __init__(self, root):
         self.root = root
@@ -12,11 +13,21 @@ class InterfaceGrafica:
         self.frame = tk.Frame(root)
         self.frame.pack()
 
-        self.botaoCarregarImagem = tk.Button(self.frame, text="Carregar Pasta com BMP", command=self.carregarImagem)
+        self.botaoCarregarImagem = tk.Button(
+            self.frame, text="Carregar Pasta com BMP", command=self.carregarImagem
+        )
         self.botaoCarregarImagem.pack(side=tk.LEFT)
 
         # Adicionei um range para dar zoom na imagem
-        self.sliderZoom = ttk.Scale(self.frame, from_=0.1, to=40, orient=tk.HORIZONTAL, length=200, value=1, command=self.atualizarZoom)
+        self.sliderZoom = ttk.Scale(
+            self.frame,
+            from_=0.1,
+            to=40,
+            orient=tk.HORIZONTAL,
+            length=200,
+            value=1,
+            command=self.atualizarZoom,
+        )
         self.sliderZoom.pack(side=tk.LEFT, padx=10)
 
         self.labelImagem = tk.Label(root)
@@ -44,57 +55,95 @@ class InterfaceGrafica:
                 self.grafo = grafo
 
                 # Chama a função para realizar a busca do caminho e desenhar na interface
-                self.realizarBuscaCaminho()
+                self.desenhaGrafo()
 
-    def realizarBuscaCaminho(self):
+    def desenhaGrafo(self):
         if self.grafo:
             zoom = self.sliderZoom.get()
             larguraTela = 500
             alturaTela = 1000
-            self.espacamento = min(larguraTela, alturaTela) / max(self.grafo.numNos, 1) * zoom
+            self.espacamento = (
+                min(larguraTela, alturaTela) / max(self.grafo.numNos, 1) * zoom
+            )
 
             imagemBranca = Image.new("RGB", (larguraTela, alturaTela), "white")
             draw = ImageDraw.Draw(imagemBranca)
 
             menorCaminho = None
-            menorDistancia = float('inf')
+            menorDistancia = float("inf")
 
-            pred = self.grafo.dijkstra(self.grafo.pixelInicial)
+            pred = self.grafo.dijkstra(self.grafo.areasVermelhas)
 
             for i, pixel in enumerate(self.grafo.lista):
                 x, y = pixel
                 centroX = (x + 0.5) * self.espacamento
                 centroY = (y + 0.5) * self.espacamento
                 raio = 0.4 * self.espacamento
-                if pixel in self.grafo.areasVerdes:      
+                if pixel in self.grafo.areasVerdes:
                     draw.ellipse(
-                        [centroX - raio, centroY - raio, centroX + raio, centroY + raio],
+                        [
+                            centroX - raio,
+                            centroY - raio,
+                            centroX + raio,
+                            centroY + raio,
+                        ],
                         outline="black",
-                        fill="green"
+                        fill=(0, 255, 0),
+                    )
+                elif pixel in self.grafo.areasVermelhas:
+                    draw.ellipse(
+                        [
+                            centroX - raio,
+                            centroY - raio,
+                            centroX + raio,
+                            centroY + raio,
+                        ],
+                        outline="black",
+                        fill=(255, 0, 0),
                     )
                 elif pixel in self.grafo.cinzasEscuros:
                     draw.ellipse(
-                        [centroX - raio, centroY - raio, centroX + raio, centroY + raio],
+                        [
+                            centroX - raio,
+                            centroY - raio,
+                            centroX + raio,
+                            centroY + raio,
+                        ],
                         outline="black",
-                        fill="#808080"
+                        fill="#808080",
                     )
                 elif pixel in self.grafo.cinzasClaros:
                     draw.ellipse(
-                        [centroX - raio, centroY - raio, centroX + raio, centroY + raio],
+                        [
+                            centroX - raio,
+                            centroY - raio,
+                            centroX + raio,
+                            centroY + raio,
+                        ],
                         outline="black",
-                        fill="#c4c4c4"
+                        fill="#c4c4c4",
                     )
                 elif pixel in self.grafo.pixelsPretos:
                     draw.ellipse(
-                        [centroX - raio, centroY - raio, centroX + raio, centroY + raio],
+                        [
+                            centroX - raio,
+                            centroY - raio,
+                            centroX + raio,
+                            centroY + raio,
+                        ],
                         outline="black",
-                        fill="black"
+                        fill="black",
                     )
-                else:      
+                else:
                     draw.ellipse(
-                        [centroX - raio, centroY - raio, centroX + raio, centroY + raio],
+                        [
+                            centroX - raio,
+                            centroY - raio,
+                            centroX + raio,
+                            centroY + raio,
+                        ],
                         outline="black",
-                        fill="white"
+                        fill="white",
                     )
 
         for pixelFinal in self.grafo.areasVerdes:
@@ -115,21 +164,34 @@ class InterfaceGrafica:
 
     def desenharCaminho(self, imagem, caminho, espacamento):
         draw = ImageDraw.Draw(imagem)
-        corCaminho = (0, 0, 255)
 
         for pixel in caminho:
             x, y = pixel
             centroX = (x + 0.5) * espacamento
             centroY = (y + 0.5) * espacamento
             raio = 0.4 * espacamento
-            draw.ellipse(
-                [centroX - raio, centroY - raio, centroX + raio, centroY + raio],
-                outline="black",
-                fill=corCaminho
-            )
+            if pixel in self.grafo.areasVerdes:
+                draw.ellipse(
+                    [centroX - raio, centroY - raio, centroX + raio, centroY + raio],
+                    outline="black",
+                    fill=(0, 255, 0),
+                )
+            elif pixel in self.grafo.areasVermelhas:
+                draw.ellipse(
+                    [centroX - raio, centroY - raio, centroX + raio, centroY + raio],
+                    outline="black",
+                    fill=(255, 0, 0),
+                )
+            elif pixel:
+                draw.ellipse(
+                    [centroX - raio, centroY - raio, centroX + raio, centroY + raio],
+                    outline="black",
+                    fill=(0, 0, 255),
+                )
 
     def atualizarZoom(self, _=None):
-        self.realizarBuscaCaminho()
+        self.desenhaGrafo()
+
 
 root = tk.Tk()
 interface = InterfaceGrafica(root)

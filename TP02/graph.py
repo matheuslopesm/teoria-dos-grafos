@@ -2,14 +2,15 @@ from PIL import Image
 import os
 import heapq
 
+
 class Grafo:
     def __init__(self) -> None:
         self.lista = {}
         self.numNos = 0
         self.numArestas = 0
-        self.pixelInicial = 0
         self.pixelFinal = 0
         self.areasVerdes = []
+        self.areasVermelhas = []
         self.cinzasClaros = []
         self.cinzasEscuros = []
         self.pixelsPretos = []
@@ -110,16 +111,18 @@ class Grafo:
                         corDoPixel = imagem.getpixel(pixel)
                         if (novoNo) not in self.lista:
                             self.adicionaNo(novoNo)
-                        if corDoPixel == (0, 0, 0):
+                        elif corDoPixel == (0, 0, 0):
                             self.pixelsPretos.append(novoNo)
-                        if corDoPixel == (255, 0, 0):
-                            self.pixelInicial = novoNo
-                        if corDoPixel == (0, 255, 0):
+                        elif corDoPixel == (255, 0, 0):
+                            self.areasVermelhas.append(novoNo)
+                        elif corDoPixel == (0, 255, 0):
                             self.pixelFinal = novoNo
-                            self.areasVerdes.append(novoNo)
-                        if corDoPixel == (128, 128, 128):
-                            self.cinzasEscuros.append(novoNo)  # Sempre que encontrar uma área verde ela será adicionada na lista de áreas verdes.
-                        if corDoPixel == (196, 196, 196):
+                            self.areasVerdes.append(
+                                novoNo
+                            )  # Sempre que encontrar uma área verde ela será adicionada na lista de áreas verdes.
+                        elif corDoPixel == (128, 128, 128):
+                            self.cinzasEscuros.append(novoNo)
+                        elif corDoPixel == (196, 196, 196):
                             self.cinzasClaros.append(novoNo)
         self.conectaVizinhos(base, altura, imagem, corDoPixel)
 
@@ -144,30 +147,29 @@ class Grafo:
                     novoU, novoV = linha + dx, coluna + dy
                     if altura > novoU >= 0 and base > novoV >= 0:
                         vizinho = novoU, novoV
-                        corDoVizinho = imagem.getpixel((novoV, novoU))
 
-                        if vizinho in self.lista and corDoVizinho != (0, 0, 0):
+                        if vizinho in self.lista:
                             # Define um peso base
                             peso = 1
 
-                            # Se o vizinho for um pixel não branco, torna a ligação menos favorável
-                            if corDoVizinho != (255, 255, 255):
-                                peso *= 1.5
-
                             if corDoPixelAtual == (128, 128, 128):
-                                peso *= 2  # Aumenta o peso para pixels cinza escuro
+                                peso = 4  # Atribui o peso 4 para pixels cinza escuro
                             elif corDoPixelAtual == (196, 196, 196):
-                                peso *= 1.5  # Aumenta o peso para pixels cinza claro
+                                peso = 2  # Atribui o peso 2 para pixels cinza claro
 
                             self.adicionaAresta(no, vizinho, peso)
 
         self.printaGrafoNoConsole()
+        self.printaPontosVermelhos()
 
-    def dijkstra(self, pixelInicial):
+    def dijkstra(self, areasVermelhas):
         dist = {no: float("inf") for no in self.lista}
         pred = {no: None for no in self.lista}
-        dist[pixelInicial] = 0
-        Q = [(dist[pixelInicial], pixelInicial)]
+
+        Q = [(0, ponto) for ponto in areasVermelhas]
+
+        for ponto in areasVermelhas:
+            dist[ponto] = 0
 
         while Q:
             dist_u, u = heapq.heappop(Q)
@@ -206,4 +208,10 @@ class Grafo:
         Exemplo: "No: (19, 15), Arestas: [((18, 15), 1), ((19, 14), 1), ((19, 16), 1)]"
         """
         for no, vizinhos in self.lista.items():
-            print(f"No: {no}, Arestas: {[(vizinho, peso) for vizinho, peso in vizinhos.items()]}")
+            print(
+                f"No: {no}, Arestas: {[(vizinho, peso) for vizinho, peso in vizinhos.items()]}"
+            )
+
+    def printaPontosVermelhos(self):
+        for ponto in self.areasVermelhas:
+            print(f"No {ponto}")
