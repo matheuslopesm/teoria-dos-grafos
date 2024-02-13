@@ -15,10 +15,8 @@
 Para usar o projeto, siga os passos abaixo:
 1. Faça o download de todos arquivos neste repositório;
 2. Instale o python na sua máquina;
-3. Execute o arquivo main.py na sua IDE;
-4. Clique em "carregar imagem" e selecione seu arquivo .BMP;
-5. Após isso clique em "Buscar Caminho";
-6. Utilize o zoom caso necessário!
+3. Execute o arquivo index.py na sua IDE;
+4. Clique em "carregar" e selecione sua pasta com os arquivos .BMP;
 
 --- 
 
