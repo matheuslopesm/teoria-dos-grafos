@@ -1,9 +1,10 @@
+import time
 from PIL import Image
 import os
 import heapq
 
 
-class Grafo:
+class Graph:
     def __init__(self) -> None:
         self.lista = {}
         self.numNos = 0
@@ -15,34 +16,34 @@ class Grafo:
         self.cinzasEscuros = []
         self.pixelsPretos = []
 
-    def adicionaNo(self, no: any) -> None:
+    def adicionaNo(self, pixel_info):
         """
         Adiciona nó ao grafo.
 
         Parâmetros:
-        - no: O nó que será adicionado ao grafo.
+        - pixel_info: O nó que será adicionado ao grafo.
 
         Essa função verifica se o nó já existe no grafo antes de fazer a adição. Após a adição
         ela itera o número de nós existentes no grafo.
         """
         try:
-            if self.lista[no] != {}:
+            if self.lista[pixel_info] != {}:
                 return
         except KeyError:
-            self.lista[no] = {}
+            self.lista[pixel_info] = {}
             self.numNos += 1
 
     def adicionaAresta(self, u, v, pesoAresta):
         """
-        Adiciona aresta entre 2 nós do grafo.
+        Adiciona aresta ao grafo.
 
         Parâmetros:
-        - u: Nó que será ligado a u.
-        - v: Nó que será ligado a v.
-        - pesoAresta: Peso da aresta que será adicionada entre os nós u e v.
+        - u: O primeiro nó da aresta.
+        - v: O segundo nó da aresta.
+        - pesoAresta: O peso da aresta a ser adicionada.
 
-        Essa função adiciona uma aresta (ligação) entre dois nós u e v com o peso informado e
-        itera o número de arestas existentes no grafo.
+        Esta função adiciona uma aresta entre os nós u e v no grafo, garantindo que ambos os nós existam previamente.
+        Após a adição, incrementa o número de arestas do grafo.
         """
         self.adicionaNo(u)
         self.adicionaNo(v)
@@ -51,120 +52,147 @@ class Grafo:
 
     def carregaImagem(self, arquivoBitmap):
         """
-        Carrega a imagem bitmap que está dentro da pasta fornecida pelo usuário.
+        Carrega imagem do arquivo Bitmap.
 
         Parâmetros:
-        - arquivoBitmap: Imagem bitmap a ser mapeada.
+        - arquivoBitmap: O caminho do arquivo Bitmap a ser carregado.
 
-        Essa função pega o diretório atual do arquivo e o caminho do arquivo informado pelo usuário (que está dentro da pasta),
-        utiliza o módulo "Image" da biblioteca PIL e faz tratamento de exceções para importar o arquivo com sucesso.
+        Esta função tenta carregar a imagem do arquivo Bitmap especificado e retorna a imagem carregada.
+        Se ocorrer algum erro ao abrir a imagem, imprime uma mensagem de erro e retorna None.
         """
-        diretorioAtual = os.path.dirname(os.path.abspath(__file__))
-        caminhoArquivo = os.path.join(diretorioAtual, arquivoBitmap)
-
         try:
-            imagem = Image.open(caminhoArquivo)
-            return imagem
-        except FileNotFoundError:
-            print(f"Arquivo {caminhoArquivo} não encontrado.")
-            return None
+            imagem = Image.open(arquivoBitmap)
+            return [imagem]
         except Exception as e:
-            print(f"Erro ao abrir a imagem {e}")
+            print("Erro ao abrir as imagens:", e)
             return None
 
     def criaGrafo(self, arquivoBitmap):
         """
-        Carrega a imagem bitmap informada pelo usuário e cria o grafo correspondente.
+        Cria o grafo a partir de uma imagem Bitmap.
 
         Parâmetros:
-        - arquivoBitmap: Caminho da imagem bitmap a ser mapeada.
+        - arquivoBitmap: O caminho do arquivo Bitmap a ser utilizado para criar o grafo.
 
-        Essa função utiliza o módulo "Image" da biblioteca PIL para abrir e carregar a imagem bitmap
-        especificada pelo usuário. Em seguida, percorre os pixels da imagem, adiciona os nós correspondentes
-        ao grafo, identifica os nós inicial e final a partir das cores dos pixels e, finalmente, conecta
-        os vizinhos no grafo. Por fim, realiza uma busca em largura para caminhos mínimos entre os nós inicial
-        e final.
+        Esta função carrega a imagem do arquivo Bitmap especificado e cria um grafo com base nos pixels da imagem.
+        Itera sobre os pixels da imagem, criando nós para representar cada pixel e adicionando-os ao grafo.
+        Além disso, identifica diferentes regiões na imagem com base nas cores dos pixels e as marca para posterior análise.
         """
-        pontosRelativos = [(-1, 0), (1, 0), (0, -1), (0, 1)]
+        pontosRelativos = [
+            (-1, 0, 0),
+            (1, 0, 0),
+            (0, -1, 0),
+            (0, 1, 0),
+            (0, 0, 1),
+            (0, 0, -1),
+        ]
 
-        imagem = self.carregaImagem(arquivoBitmap)
+        imagens = self.carregaImagem(arquivoBitmap)
+        numPisos = len(imagens)
 
-        if imagem is None:
-            print("Arquivo não encontrado!")
+        if imagens is None:
+            print("Arquivos não encontrados!")
+            return
 
-        base, altura = imagem.size
+        for numPiso in range(numPisos):
+            imagem = imagens[numPiso]
+            base, altura = imagem.size
+
+            for linha in range(altura):
+                for coluna in range(base):
+                    for dx, dy, dz in pontosRelativos:
+                        novoU, novoV, novoT = linha + dx, coluna + dy, dz
+                        if (
+                            altura > novoU >= 0
+                            and base > novoV >= 0
+                            and numPisos > novoT >= 0
+                        ):
+                            pixel = (novoV, novoU, numPiso)
+
+                            corDoPixel = imagem.getpixel((novoV, novoU))
+
+                            if pixel not in self.lista:
+                                self.adicionaNo(pixel)
+                            elif corDoPixel == (0, 0, 0):
+                                self.pixelsPretos.append(pixel)
+                            elif corDoPixel == (255, 0, 0):
+                                if pixel not in self.areasVermelhas:
+                                    self.areasVermelhas.append(pixel)
+                            elif corDoPixel == (0, 255, 0):
+                                if pixel not in self.areasVerdes:
+                                    self.pixelFinal = pixel
+                                    self.areasVerdes.append(pixel)
+                            elif corDoPixel == (128, 128, 128):
+                                if pixel not in self.cinzasEscuros:
+                                    self.cinzasEscuros.append(pixel)
+                            elif corDoPixel == (196, 196, 196):
+                                if pixel not in self.cinzasClaros:
+                                    self.cinzasClaros.append(pixel)
+        self.conectaVizinhos(base, altura, numPisos, imagem)
+
+    def conectaVizinhos(self, base, altura, profundidade, imagem):
         """
-        Nesse trecho, peguei nó por linha (horizontal), cada nó por coluna (vertical) e somei
-        eles à cada coordenada da lista "pontosRelativos": superior, inferior, esquerda, direita, 
-        pois um nó pode ter 1 a 4 vizinhos dentro dos limites do grafo (base, altura).
-        Utilizei condições para pegar esses nós e adicionar no grafo.
-        Depois disso peguei as cores inicial (vermelho) e final (verde) identificadas no grafo.
-        Por fim, chamei 2 funções: conectaVizinhos e buscaLargura.
+        Conecta os vizinhos no grafo.
+
+        Parâmetros:
+        - base: A largura da imagem em pixels.
+        - altura: A altura da imagem em pixels.
+        - profundidade: A profundidade do grafo, representando o número de andares.
+        - imagem: A imagem utilizada para determinar a conectividade dos pixels.
+
+        Esta função percorre os pixels da imagem e adiciona arestas entre os pixels vizinhos no grafo,
+        considerando apenas os pixels que não são pretos. O peso das arestas é determinado com base na cor do pixel.
         """
         for linha in range(altura):
             for coluna in range(base):
-                for dx, dy in pontosRelativos:
-                    novoU, novoV = linha + dx, coluna + dy
-                    if altura > novoU >= 0 and base > novoV >= 0:
-                        novoNo = novoU, novoV
-                        pixel = (novoV, novoU)
-                        corDoPixel = imagem.getpixel(pixel)
-                        if (novoNo) not in self.lista:
-                            self.adicionaNo(novoNo)
-                        elif corDoPixel == (0, 0, 0):
-                            self.pixelsPretos.append(novoNo)
-                        elif corDoPixel == (255, 0, 0):
-                            self.areasVermelhas.append(novoNo)
-                        elif corDoPixel == (0, 255, 0):
-                            self.pixelFinal = novoNo
-                            self.areasVerdes.append(
-                                novoNo
-                            )  # Sempre que encontrar uma área verde ela será adicionada na lista de áreas verdes.
-                        elif corDoPixel == (128, 128, 128):
-                            self.cinzasEscuros.append(novoNo)
-                        elif corDoPixel == (196, 196, 196):
-                            self.cinzasClaros.append(novoNo)
-        self.conectaVizinhos(base, altura, imagem, corDoPixel)
+                # Obtém a cor do pixel atual
+                corDoPixelAtual = imagem.getpixel((coluna, linha))
 
-    def conectaVizinhos(self, base, altura, imagem, corDoPixel):
+                # Verifica se o pixel não é preto
+                if corDoPixelAtual != (0, 0, 0):
+                    # Adiciona o pixel como nó no grafo
+                    pixel = (coluna, linha, 0)
+                    self.adicionaNo(pixel)
+
+                    # Verifica os vizinhos nas direções vertical e horizontal
+                    for dx, dy in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
+                        novoU, novoV, novoT = linha + dy, coluna + dx, 0
+                        if (
+                            0 <= novoU < altura
+                            and 0 <= novoV < base
+                            and 0 <= novoT < profundidade
+                        ):
+                            vizinho = (novoV, novoU, novoT)
+
+                            if vizinho in self.lista:
+                                peso = 1
+
+                                if corDoPixelAtual == (128, 128, 128):
+                                    peso = 4  # Peso 4 para pixels cinza escuro
+                                elif corDoPixelAtual == (196, 196, 196):
+                                    peso = 2  # Peso 2 para pixels cinza claro
+
+                                if novoT != 0:
+                                    peso = 5  # Peso 5 se o vizinho estiver em um piso diferente
+
+                                self.adicionaAresta(pixel, vizinho, peso)
+
+    def dijkstra(self, areasVermelhas, grafo=None):
         """
-        Conecta os nós vizinhos no grafo.
+        Executa o algoritmo de Dijkstra em um grafo.
 
         Parâmetros:
-        - base: Largura da imagem.
-        - altura: Altura da imagem.
+        - areasVermelhas: Uma lista de pontos da saída do caminho no grafo.
+        - grafo: O grafo no qual o algoritmo será executado. Se não for fornecido, será utilizado o grafo interno.
 
-        Essa função percorre todos os nós do grafo e, para cada nó, verifica os vizinhos nas direções
-        superior, inferior, esquerda e direita. Se um vizinho estiver dentro dos limites da imagem e existir
-        no grafo, adiciona uma aresta entre o nó atual e o vizinho.
+        Retorna:
+        Um dicionário contendo os predecessores de cada nó no caminho mais curto até as áreas vermelhas especificadas.
         """
-        for no in self.lista:
-            linha, coluna = no
-            corDoPixelAtual = imagem.getpixel((coluna, linha))
+        if grafo is None:
+            grafo = self.lista  # Use o grafo interno se nenhum grafo for fornecido
 
-            if corDoPixelAtual != (0, 0, 0):
-                for dx, dy in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
-                    novoU, novoV = linha + dx, coluna + dy
-                    if altura > novoU >= 0 and base > novoV >= 0:
-                        vizinho = novoU, novoV
-
-                        if vizinho in self.lista:
-                            # Define um peso base
-                            peso = 1
-
-                            if corDoPixelAtual == (128, 128, 128):
-                                peso = 4  # Atribui o peso 4 para pixels cinza escuro
-                            elif corDoPixelAtual == (196, 196, 196):
-                                peso = 2  # Atribui o peso 2 para pixels cinza claro
-
-                            self.adicionaAresta(no, vizinho, peso)
-
-        self.printaGrafoNoConsole()
-        self.printaPontosVermelhos()
-
-    def dijkstra(self, areasVermelhas):
-        dist = {no: float("inf") for no in self.lista}
-        pred = {no: None for no in self.lista}
+        dist = {no: float("inf") for no in grafo}
+        pred = {no: None for no in grafo}
 
         Q = [(0, ponto) for ponto in areasVermelhas]
 
@@ -174,44 +202,77 @@ class Grafo:
         while Q:
             dist_u, u = heapq.heappop(Q)
 
-            for v, peso in self.lista[u].items():
+            for v, peso in grafo[u].items():
                 if dist[v] > dist_u + peso:
                     dist[v] = dist_u + peso
-                    heapq.heappush(Q, (dist[v], v))
                     pred[v] = u
+                    heapq.heappush(Q, (dist[v], v))
 
+        return pred
+    
+    def dijkstraForMultiplasImagens(self, areasVermelhas, grafo=None):
+        """
+        Executa o algoritmo de Dijkstra em um grafo com múltiplos andares (imagens).
+
+        Parâmetros:
+        - areasVermelhas: Uma lista de pontos da saída do caminho no grafo.
+        - grafo: O grafo no qual o algoritmo será executado. Se não for fornecido, será utilizado o grafo interno.
+
+        Retorna:
+        Um dicionário contendo os predecessores de cada nó no caminho mais curto até as áreas vermelhas especificadas,
+        considerando a possibilidade de múltiplos andares.
+        """
+        if grafo is None:
+            grafo = self.lista
+
+        dist = {no: float("inf") for no in grafo}
+        pred = {no: None for no in grafo}
+
+        Q = [(0, ponto) for ponto in areasVermelhas]
+
+        for ponto in areasVermelhas:
+            dist[ponto] = 0
+
+        while Q:
+            dist_u, u = heapq.heappop(Q)
+
+            # print(f"Explorando nó {u}, distância atual: {dist_u}")
+
+            x, y, z = u
+
+            # Verificar vizinhos em todos os andares
+            for dx, dy, dz in [(1, 0, 0), (-1, 0, 0), (0, 1, 0), (0, -1, 0), (0, 0, -1), (0, 0, 1)]:
+                novoX, novoY, novoZ = x + dx, y + dy, z + dz
+                novoPonto = (novoX, novoY, novoZ)
+
+                if novoPonto in grafo:
+                    peso = 1
+                    if dz != 0:
+                        peso = 5
+
+                    if dist[novoPonto] > dist_u + peso:
+                        dist[novoPonto] = dist_u + peso
+                        pred[novoPonto] = u
+                        heapq.heappush(Q, (dist[novoPonto], novoPonto))
+                        # print(f"   Atualizado nó {novoPonto}, nova distância: {dist[novoPonto]}, predecessor: {u}")
         return pred
 
     def reconstruirCaminho(self, pixelFinal, pred):
         """
-        Recria o caminho percorrido com base nas informações de predecessores mantidas durante a
-        execução do algoritmo.
+        Reconstrói o caminho a partir do pixel final e dos predecessores.
 
         Parâmetros:
-        - pixelFinal: Pixel de destino do caminho.
-        - pred: Dicionário de predecessores.
+        - pixelFinal: O pixel final do caminho.
+        - pred: Um dicionário contendo os predecessores de cada nó no caminho.
 
-        Retorna uma lista de coordenadas representando o caminho percorrido.
+        Retorna:
+        Uma lista contendo as coordenadas do caminho reconstruído a partir do pixel final.
         """
-        caminho = []  # Usada para armazenar as coordenadas do caminho
-        atual = pixelFinal  # Inicializa o nó com o pixelFinal, pois a reconstrução vai começar pelo final para ser mais performático.
+        caminho = []
+        atual = pixelFinal
 
         while atual is not None:
-            caminho.insert(0, atual)  # Insere as coordenadas na lista caminho
-            atual = pred[atual]  # Atualiza o nó atual como sendo o predecessor
+            caminho.insert(0, atual)
+            atual = pred[atual]
 
         return caminho
-
-    def printaGrafoNoConsole(self):
-        """
-        Printa o grafo com seus nós, arestas e os pesos de cada uma delas.
-        Exemplo: "No: (19, 15), Arestas: [((18, 15), 1), ((19, 14), 1), ((19, 16), 1)]"
-        """
-        for no, vizinhos in self.lista.items():
-            print(
-                f"No: {no}, Arestas: {[(vizinho, peso) for vizinho, peso in vizinhos.items()]}"
-            )
-
-    def printaPontosVermelhos(self):
-        for ponto in self.areasVermelhas:
-            print(f"No {ponto}")
